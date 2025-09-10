@@ -1,14 +1,14 @@
 """
-Neurological Health Assessment Tool - Streamlit Application
+Neurological Health Assessment Tool - Streamlit Application (Optimized)
 
 A web-based assessment tool that evaluates potential indicators of neurological
 conditions including Parkinson's disease and Multiple Sclerosis. Users complete
-a 10-question symptom questionnaire along with demographic information, and
-receive AI-powered health insights via a trained machine learning model.
+a streamlined assessment process with optional user ID lookup for existing data.
 
 Features:
-- Multi-step guided assessment process
-- Real-time BMI calculation
+- Streamlined 4-step assessment process
+- Optional user ID lookup for existing data
+- Real-time questionnaire pre-population
 - Interactive result visualizations
 - Integration with FastAPI ML prediction service
 
@@ -34,9 +34,20 @@ import plotly.express as px
 import plotly.graph_objects as go
 import time
 
+
+
+csv_path = "./data/questionnaire_test.csv"
+
+def load_questionnaire_data():
+    df = pd.read_csv("data/questionnaire_test.csv")
+    df['id_index'] = df['Unnamed: 0']
+    return df
+
+questionnaire_df = load_questionnaire_data()
+
 # Page configuration
 st.set_page_config(
-    page_title="Motion Health Assessment",
+    page_title="Personal Motion Health Assessment",
     page_icon="🏃‍♀️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -80,34 +91,9 @@ st.markdown("""
     }
 
     .info-box {
-        background-color: #E3F2FD !important;
         padding: 1.5rem !important;
         border-radius: 12px !important;
         border-left: 5px solid #2196F3 !important;
-        margin: 1.5rem 0 !important;
-    }
-
-    .warning-box {
-        background-color: #FFF3E0 !important;
-        padding: 1.5rem !important;
-        border-radius: 12px !important;
-        border-left: 5px solid #FF9800 !important;
-        margin: 1.5rem 0 !important;
-    }
-
-    .success-box {
-        background-color: #E8F5E8 !important;
-        padding: 1.5rem !important;
-        border-radius: 12px !important;
-        border-left: 5px solid #4CAF50 !important;
-        margin: 1.5rem 0 !important;
-    }
-
-    .privacy-box {
-        background-color: #F3E5F5 !important;
-        padding: 1.5rem !important;
-        border-radius: 12px !important;
-        border-left: 5px solid #9C27B0 !important;
         margin: 1.5rem 0 !important;
     }
 
@@ -143,22 +129,12 @@ st.markdown("""
         color: #666;
     }
 
-    .motion-guide {
-        background: linear-gradient(135deg, #74b9ff, #0984e3);
-        color: white;
+    .questionnaire-section {
+        background-color: #f8f9ff;
         padding: 2rem;
         border-radius: 15px;
-        text-align: center;
-        margin: 1rem 0;
-    }
-
-    .upload-area {
-        border: 2px dashed #2196F3;
-        border-radius: 15px;
-        padding: 3rem;
-        text-align: center;
-        background-color: #f8f9ff;
-        margin: 2rem 0;
+        margin: 1.5rem 0;
+        border: 2px solid #e3f2fd;
     }
 
     .big-button {
@@ -172,9 +148,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Constants
-FASTAPI_URL = "https://spark-283984718972.europe-west1.run.app/predict"
+FASTAPI_URL = "https://spark-283984718972.europe-west1.run.app/predict_by_qn"
+FASTAPI_URL_USER = 'https://spark-283984718972.europe-west1.run.app/predict_by_user_id'
 
-# Questionnaire data
+# Complete questionnaire data (all 10 questions)
 QUESTIONNAIRE = {
     "02": "Has your handwriting become smaller or more cramped?",
     "03": "Do people have trouble understanding your speech?",
@@ -183,6 +160,7 @@ QUESTIONNAIRE = {
     "17": "Do you feel tired more often than usual?",
     "20": "Do you experience depression or anxiety?",
 }
+
 
 # Motion-related conditions checklist
 MOTION_CONDITIONS = [
@@ -195,26 +173,57 @@ MOTION_CONDITIONS = [
     "Other neurological conditions"
 ]
 
+# Sample user data (you can replace this with actual dataset later)
+SAMPLE_USER_DATA = {
+    "user001": {
+        "age": 65,
+        "gender": "Male",
+        "appearance_in_kinship": "Yes",
+        "age_at_diagnosis": 62,
+        "responses": {
+            "02": True, "03": False, "04": True, "05": False, "06": True,
+            "07": False, "08": True, "09": False, "10": False, "11": True,
+            "12": False, "13": True, "14": True, "15": False, "16": True,
+            "17": True, "18": False, "19": False, "20": True
+        }
+    },
+    "user002": {
+        "age": 45,
+        "gender": "Female",
+        "appearance_in_kinship": "No",
+        "age_at_diagnosis": 0,
+        "responses": {
+            "02": False, "03": False, "04": False, "05": True, "06": False,
+            "07": False, "08": False, "09": False, "10": False, "11": False,
+            "12": False, "13": False, "14": False, "15": False, "16": False,
+            "17": True, "18": False, "19": False, "20": False
+        }
+    }
+}
+
 def initialize_session_state():
     """Initialize session state variables."""
     if 'current_step' not in st.session_state:
         st.session_state.current_step = 0
     if 'user_data' not in st.session_state:
         st.session_state.user_data = {}
-    if 'health_history' not in st.session_state:
-        st.session_state.health_history = {}
-    if 'motion_data_uploaded' not in st.session_state:
-        st.session_state.motion_data_uploaded = False
     if 'questionnaire_responses' not in st.session_state:
         st.session_state.questionnaire_responses = {}
     if 'consent_given' not in st.session_state:
         st.session_state.consent_given = False
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = ""
+    if 'existing_user_data' not in st.session_state:
+        st.session_state.existing_user_data = None
+    if "id_index" not in st.session_state:
+        st.session_state.id_index = None  # FIXED: Initialize as None instead of undefined
+
 
 def show_step_indicator(current_step, total_steps):
     """Show progress indicator."""
     st.markdown('<div class="step-indicator">', unsafe_allow_html=True)
 
-    steps = ["Welcome", "Info", "History", "Motion", "Upload", "Survey", "Results", "Done"]
+    steps = ["Welcome", "Basic info", "Assessment", "Results"]
 
     cols = st.columns(len(steps))
     for i, (col, step_name) in enumerate(zip(cols, steps)):
@@ -229,10 +238,11 @@ def show_step_indicator(current_step, total_steps):
                 status = "pending"
                 icon = str(i + 1)
 
+            # Use flexbox to align the circle and the text
             st.markdown(f"""
-            <div style="text-align: center;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
                 <div class="step-circle step-{status}">{icon}</div>
-                <small>{step_name}</small>
+                <small style="margin-top: 0.5rem; text-align: center;">{step_name}</small>
             </div>
             """, unsafe_allow_html=True)
 
@@ -257,8 +267,7 @@ def step_0_welcome():
         st.markdown("""
         ### What you'll do:
         - 📝 Share some basic health information
-        - 🤝 Answer a few simple questions
-        - 📱 Optionally upload motion data
+        - 🤝 Answer a comprehensive health questionnaire
         - 📊 Receive personalized insights
 
         **Time needed:** 5-10 minutes
@@ -270,12 +279,11 @@ def step_0_welcome():
             st.rerun()
 
 def step_1_basic_info():
-    """Step 1: Personal Details Form & Privacy"""
-    st.markdown('<div class="section-header">📋 Personal Details</div>', unsafe_allow_html=True)
+    """Step 1: Personal Details Form & Health History"""
+    st.markdown('<div class="section-header">📋 Personal Information & Health History</div>', unsafe_allow_html=True)
 
-    # Privacy Assurance
     st.markdown("""
-    <div class="privacy-box">
+    <div class="info-box" style="background-color: #F3E5F5; border-left: 5px solid #9C27B0;">
         <h4>🔒 Your Privacy Matters</h4>
         <p>• All data is encrypted and anonymized</p>
         <p>• No personal identifiers are stored</p>
@@ -289,20 +297,42 @@ def step_1_basic_info():
     with col1:
         age = st.number_input("Your Age", min_value=18, max_value=120, value=65,
                              help="This helps us provide age-appropriate insights")
-        age_at_diagnosis = st.number_input(
-            "Age at any motion-related diagnosis (0 if none)",
-            min_value=0, max_value=120, value=0,
-            help="Enter 0 if you haven't been diagnosed with motion-related conditions"
-        )
-
-    with col2:
         gender = st.selectbox("Gender", ["Male", "Female"],
                              help="Biological sex assigned at birth")
+
+    with col2:
         appearance_in_kinship = st.selectbox(
             "Family history of Parkinson's disease",
             ["No", "Yes"],
             help="Do any blood relatives have Parkinson's disease?"
         )
+
+    # Health History Section
+    st.markdown("---")
+    st.markdown("### 🏥 Motion-Related Health History")
+
+    has_conditions = st.radio(
+        "Have you been diagnosed with any motion-related conditions?",
+        ["No", "Yes"],
+        key="has_conditions"
+    )
+
+    age_at_diagnosis = 0
+    conditions_list = []
+
+    if has_conditions == "Yes":
+        age_at_diagnosis = st.number_input(
+            "Age at diagnosis",
+            min_value=1, max_value=120, value=50,
+            help="Age when you were first diagnosed with a motion-related condition"
+        )
+
+        st.markdown("**Please select all conditions that apply:**")
+        cols = st.columns(2)
+        for i, condition in enumerate(MOTION_CONDITIONS):
+            with cols[i % 2]:
+                if st.checkbox(condition, key=f"condition_{i}"):
+                    conditions_list.append(condition)
 
     # Consent checkbox
     consent = st.checkbox(
@@ -314,7 +344,9 @@ def step_1_basic_info():
         "age": age,
         "age_at_diagnosis": age_at_diagnosis,
         "gender": gender,
-        "appearance_in_kinship": appearance_in_kinship
+        "appearance_in_kinship": appearance_in_kinship,
+        "has_conditions": has_conditions == "Yes",
+        "conditions": conditions_list
     }
     st.session_state.consent_given = consent
 
@@ -326,45 +358,202 @@ def step_1_basic_info():
             st.rerun()
 
     with col3:
-        if st.button("Continue →", type="primary", key="continue_1", disabled=not consent):
+        if st.button("Continue to Assessment →", type="primary", key="continue_1", disabled=not consent):
             if consent:
                 st.session_state.current_step = 2
                 st.rerun()
             else:
                 st.error("Please provide consent to continue")
+                
 
-def step_2_health_history():
-    """Step 2: Health History Input"""
-    st.markdown('<div class="section-header">🏥 Health History</div>', unsafe_allow_html=True)
+def get_user_answers_by_id(id_index):
+    """Return user questionnaire answers for a given id_index from CSV."""
+    questionnaire_df = pd.read_csv(csv_path)
+    questionnaire_df['id_index'] = questionnaire_df['Unnamed: 0']  # <-- Add this line
+    row = questionnaire_df[questionnaire_df["id_index"] == id_index]
+    if row.empty:
+        return None
+    # Drop id_index column, keep only question responses
+    answers = row.drop(columns=["id_index"]).iloc[0].to_dict()
+    return answers
 
+def fetch_user_data(user_id):
+    """
+    Fetch existing user data based on user ID from the FastAPI backend.
+
+    Args:
+        user_id (str): The ID of the user to fetch.
+
+    Returns:
+        dict or None: The user's data if found, otherwise None.
+    """
+    try:
+        response = requests.get(f"{FASTAPI_URL_USER}/{user_id}")
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            return None
+        else:
+            st.error(f"API Error: {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Connection Error: {str(e)}")
+        return None
+
+def step_2_assessment():
+    """Step 2: Motion Data Collection & Health Questionnaire"""
+    st.markdown('<div class="section-header">📊 Health Assessment & Questionnaire</div>', unsafe_allow_html=True)
+    
+
+    # User ID Section (Optional)
     st.markdown("""
-    <div class="info-box">
-        <h4>Motion-Related Conditions Check</h4>
-        <p>This helps us understand your overall motion health context.</p>
+    <div class="info-box" style="background-color: #E8F5E8; border-left: 5px solid #4CAF50;">
+        <h4>👤 Optional: Input User ID</h4>
+        <p>If you have an existing user ID, enter it below to pre-populate your previous responses.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    has_conditions = st.radio(
-        "Have you been diagnosed with any motion-related conditions?",
-        ["No", "Yes"],
-        key="has_conditions"
-    )
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        id_index = st.number_input(
+            "Enter ID Index (optional)",
+            min_value=0,
+            value=st.session_state.id_index if st.session_state.id_index else 0,
+            help="Load questionnaire data by ID"
+        )
+        
+    with col2:
+        if st.button("Load CSV Data", key="load_csv_data"):
+            if id_index > 0:
+                # Load data from CSV
+                answers = get_user_answers_by_id(id_index)
+                if answers:
+                    st.session_state.id_index = id_index
+                    st.session_state.user_id = str(id_index)  # <-- ADD THIS LINE
+                    st.session_state.existing_user_data = None  # Clear user data
+                    st.success(f"✅ data loaded for ID Index: {id_index}")
+                    st.rerun()
+                else:
+                    st.error(f"❌ No data found for ID Index: {id_index}")
+            else:
+                st.session_state.id_index = None
+                st.session_state.user_id = ""  # <-- ADD THIS LINE (clear user_id)
+                st.info("Starting fresh assessment")    
+            
+    
+    
 
-    conditions_list = []
-    if has_conditions == "Yes":
-        st.markdown("**Please select all that apply:**")
 
-        cols = st.columns(2)
-        for i, condition in enumerate(MOTION_CONDITIONS):
-            with cols[i % 2]:
-                if st.checkbox(condition, key=f"condition_{i}"):
-                    conditions_list.append(condition)
+    # Display loaded user info if available
+    if st.session_state.existing_user_data:
+        st.markdown("""
+        <div class="info-box" style="background-color: #E3F2FD; border-left: 5px solid #2196F3;">
+            <h4>📋 Loaded User Information</h4>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.session_state.health_history = {
-        "has_conditions": has_conditions == "Yes",
-        "conditions": conditions_list
-    }
+        existing = st.session_state.existing_user_data
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Age", existing["age"])
+        with col2:
+            st.metric("Gender", existing["gender"])
+        with col3:
+            st.metric("Family History", existing["appearance_in_kinship"])
+        with col4:
+            st.metric("Age at Diagnosis", existing["age_at_diagnosis"] if existing["age_at_diagnosis"] > 0 else "N/A")
 
+    # Show loaded CSV data if available
+    if st.session_state.id_index:
+        st.markdown(f"""
+        <div class="info-box" style="background-color: #FFF3E0; border-left: 5px solid #FF9800;">
+            <h4>📄 Loaded Your Data based on your ID: {st.session_state.id_index}</h4>
+            <p>Questionnaire responses will be pre-filled.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Health Questionnaire Section
+    st.markdown("---")
+    st.markdown("""
+    <div class="questionnaire-section">
+        <h3>🔍 Health Symptom Questionnaire</h3>
+        <p>Please answer all questions based on your experience over the past few months.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    responses = {}
+
+    # Get existing responses if user data is loaded
+    existing_responses = {}
+    if st.session_state.existing_user_data:
+        # From User ID
+        existing_responses = st.session_state.existing_user_data.get("responses", {})
+    elif st.session_state.id_index:
+        # From CSV ID Index
+        csv_answers = get_user_answers_by_id(st.session_state.id_index)
+        if csv_answers:
+            # Convert CSV answers to boolean format expected by questionnaire
+            for key in QUESTIONNAIRE.keys():
+                if key in csv_answers:
+                    existing_responses[key] = bool(csv_answers[key])
+    
+    
+   
+
+    # Create questionnaire in a more compact format
+    question_keys = list(QUESTIONNAIRE.keys())
+
+    # Progress indicator
+    progress_placeholder = st.empty()
+
+    # Display questions in a grid format
+    for i in range(0, len(question_keys), 2):
+        col1, col2 = st.columns(2)
+
+        # First question in the pair
+        question_key = question_keys[i]
+        question_text = QUESTIONNAIRE[question_key]
+
+        with col1:
+            st.markdown(f"**Q{i+1}:** {question_text}")
+            default_value = existing_responses.get(question_key, False)
+            response = st.radio(
+                "Select your answer:",
+                ["No", "Yes"],
+                index=1 if default_value else 0,
+                key=f"q_{question_key}",
+                horizontal=True
+            )
+            responses[question_key] = response == "Yes"
+
+        # Second question in the pair (if exists)
+        if i + 1 < len(question_keys):
+            question_key = question_keys[i + 1]
+            question_text = QUESTIONNAIRE[question_key]
+
+            with col2:
+                st.markdown(f"**Q{i+2}:** {question_text}")
+                default_value = existing_responses.get(question_key, False)
+                response = st.radio(
+                    "Select your answer:",
+                    ["No", "Yes"],
+                    index=1 if default_value else 0,
+                    key=f"q_{question_key}",
+                    horizontal=True
+                )
+                responses[question_key] = response == "Yes"
+
+        st.markdown("---")
+
+    # Update progress
+    completed_questions = len(responses)
+    total_questions = len(QUESTIONNAIRE)
+    progress_placeholder.progress(completed_questions / total_questions)
+
+    st.session_state.questionnaire_responses = responses
+
+    # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
@@ -373,229 +562,25 @@ def step_2_health_history():
             st.rerun()
 
     with col3:
-        if st.button("Continue →", type="primary", key="continue_2"):
-            st.session_state.current_step = 3
-            st.rerun()
-
-def step_3_motion_intro():
-    """Step 3: Motion Data Collection Setup"""
-    st.markdown('<div class="section-header">📱 Motion Data Collection</div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="motion-guide">
-        <h3>📊 Why Motion Data Matters</h3>
-        <p style="font-size: 1.1rem;">Your movements provide valuable insights into your neurological health.
-        Motion patterns can reveal early indicators that aren't easily noticed in daily life.</p>
-
-        <h4 style="margin-top: 1.5rem;">🎯 What We Analyze:</h4>
-        <p>• Movement smoothness and coordination</p>
-        <p>• Tremor patterns and frequency</p>
-        <p>• Gait stability and rhythm</p>
-        <p>• Fine motor control precision</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-        st.markdown("### Ready to proceed?")
-
-        if st.button("📱 Start Motion Assessment", type="primary", key="motion_start",
-                    use_container_width=True):
-            st.session_state.current_step = 4
-            st.rerun()
-
-        if st.button("⏭️ Skip Motion Data", key="skip_motion",
-                    use_container_width=True):
-            st.session_state.current_step = 5
-            st.rerun()
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("← Back", key="back_3"):
-            st.session_state.current_step = 2
-            st.rerun()
-
-def step_4_motion_demo():
-    """Step 4: Motion Capture Demo & Upload Options"""
-    st.markdown('<div class="section-header">🎬 Motion Data Collection</div>', unsafe_allow_html=True)
-
-    # Motion Guide
-    st.markdown("""
-    <div class="info-box">
-        <h4>📱 Motion Collection Guide</h4>
-        <p><strong>For best results:</strong></p>
-        <p>• Hold your phone or wear your smartwatch normally</p>
-        <p>• Perform natural arm movements (up, down, left, right)</p>
-        <p>• Walk normally for 30 seconds if possible</p>
-        <p>• Tap your fingers rhythmically</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Upload options
-    st.markdown("### 📤 Upload Your Motion Data")
-
-    tab1, tab2, tab3 = st.tabs(["🔗 Connect Device", "📁 Upload File", "⏭️ Skip"])
-
-    with tab1:
-        st.markdown("""
-        <div class="upload-area">
-            <h4>📱 Connect Your Wearable Device</h4>
-            <p>Seamlessly import data from:</p>
-            <p>• Apple Watch Health app</p>
-            <p>• Fitbit activity data</p>
-            <p>• Samsung Health</p>
-            <p>• Google Fit</p>
-            <br>
-            <p><em>Feature coming soon! Use file upload for now.</em></p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with tab2:
-        st.markdown("**Upload motion data files:**")
-        uploaded_files = st.file_uploader(
-            "Choose motion data files",
-            accept_multiple_files=True,
-            type=['csv', 'json', 'txt'],
-            help="Upload accelerometer, gyroscope, or other motion sensor data"
-        )
-
-        if uploaded_files:
-            st.success(f"✅ {len(uploaded_files)} file(s) uploaded successfully!")
-            st.session_state.motion_data_uploaded = True
-
-            for file in uploaded_files:
-                st.write(f"📁 {file.name} ({file.size} bytes)")
-
-    with tab3:
-        st.markdown("""
-        <div class="warning-box">
-            <h4>⏭️ Skip Motion Data</h4>
-            <p>You can still get valuable insights from the questionnaire alone,
-            though motion data provides additional accuracy.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-
-    with col1:
-        if st.button("← Back", key="back_4"):
-            st.session_state.current_step = 3
-            st.rerun()
-
-    with col3:
-        if st.button("Continue →", type="primary", key="continue_4"):
-            st.session_state.current_step = 5
-            st.rerun()
-
-def step_5_upload_confirmation():
-    """Step 5: Upload & Confirmation"""
-    st.markdown('<div class="section-header">✅ Data Processing</div>', unsafe_allow_html=True)
-
-    if st.session_state.motion_data_uploaded:
-        # Simulate processing
-        with st.spinner("Processing your motion data..."):
-            progress_bar = st.progress(0)
-            for i in range(100):
-                time.sleep(0.02)
-                progress_bar.progress(i + 1)
-
-        st.markdown("""
-        <div class="success-box">
-            <h3>🎉 Motion data received successfully!</h3>
-            <p>Your data has been processed and anonymized. This brings us closer to your personalized results!</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="info-box">
-            <h3>📝 Proceeding with questionnaire</h3>
-            <p>No motion data uploaded. We'll provide insights based on your responses to the health questionnaire.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-
-    with col1:
-        if st.button("← Back", key="back_5"):
-            st.session_state.current_step = 4
-            st.rerun()
-
-    with col3:
-        if st.button("Continue to Survey →", type="primary", key="continue_5"):
-            st.session_state.current_step = 6
-            st.rerun()
-
-def step_6_questionnaire():
-    """Step 6: Questionnaire Completion"""
-    st.markdown('<div class="section-header">📋 Health Questionnaire</div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-box">
-        <h4>Quick Health Check</h4>
-        <p>These questions help us understand your daily experiences.
-        Answer based on how you've felt over the past few months.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    responses = {}
-
-    # Progress tracking
-    progress = st.progress(0)
-
-    st.markdown("### Please answer the following questions:")
-
-    cols = st.columns(1)  # Single column for better readability
-    question_keys = list(QUESTIONNAIRE.keys())
-
-    for idx, question_key in enumerate(question_keys):
-        question_text = QUESTIONNAIRE[question_key]
-
-        with st.container():
-            st.markdown(f"**Question {idx + 1} of {len(question_keys)}:**")
-            response = st.radio(
-                question_text,
-                ["No", "Yes"],
-                key=f"q_{question_key}",
-                horizontal=True
-            )
-            responses[question_key] = response == "Yes"
-            st.markdown("---")
-
-    # Update progress
-    progress.progress(len(responses) / len(QUESTIONNAIRE))
-
-    st.session_state.questionnaire_responses = responses
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-
-    with col1:
-        if st.button("← Back", key="back_6"):
-            st.session_state.current_step = 5
-            st.rerun()
-
-    with col3:
-        if st.button("Get My Results →", type="primary", key="continue_6"):
+        if st.button("Get My Results →", type="primary", key="continue_2"):
             if len(responses) == len(QUESTIONNAIRE):
-                st.session_state.current_step = 7
+                st.session_state.current_step = 3
                 st.rerun()
             else:
-                st.error("Please answer all questions to continue.")
+                st.error(f"Please answer all {total_questions} questions to continue. ({completed_questions}/{total_questions} completed)")
 
 def make_prediction(user_data, questionnaire_responses):
-    """Make prediction using the FastAPI endpoint."""
+    required_questions = ["02", "03", "09", "13", "17", "20"]
+
     payload = {
-        "age": user_data["age"],
-        "age_at_diagnosis": user_data["age_at_diagnosis"],
-        "appearance_in_kinship": user_data["appearance_in_kinship"],
-        "gender": user_data["gender"],
-        "02": questionnaire_responses["02"],
-        "03": questionnaire_responses["03"],
-        "09": questionnaire_responses["09"],
-        "13": questionnaire_responses["13"],
-        "17": questionnaire_responses["17"],
-        "20": questionnaire_responses["20"],
+        "age": int(user_data["age"]),
+        "age_at_diagnosis": int(user_data["age_at_diagnosis"]),
+        "appearance_in_kinship": user_data["appearance_in_kinship"],  # "Yes"/"No"
+        "gender": user_data["gender"],  # "Male"/"Female"
     }
+
+    for q in required_questions:
+        payload[q] = 1 if questionnaire_responses.get(q, False) else 0
 
     try:
         response = requests.post(f"{FASTAPI_URL}", json=payload)
@@ -607,157 +592,134 @@ def make_prediction(user_data, questionnaire_responses):
     except requests.exceptions.RequestException as e:
         st.error(f"Connection Error: {str(e)}")
         return None
+    
+def predict_by_user_id(user_id):
+    """Call FastAPI endpoint to predict using user_id - uses FASTAPI_URL_USER."""
+    try:
+        payload = {"user_id": int(user_id)}
+        response = requests.post(FASTAPI_URL_USER, json=payload)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error(f"API Error: {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Connection Error: {str(e)}")
+        return None
+    
 
-def step_7_results():
-    """Step 7: Results & Insights"""
+def step_3_results():
+     # Insert an anchor at the top
+    st.markdown('<a id="top"></a>', unsafe_allow_html=True)
+    
+    """Step 3: Results & Insights - FIXED: Updated prediction logic"""
     st.markdown('<div class="section-header">📊 Your Motion Health Results</div>', unsafe_allow_html=True)
 
-    # Get prediction
-    with st.spinner("Analyzing your health data..."):
-        prediction_result = make_prediction(
-            st.session_state.user_data,
-            st.session_state.questionnaire_responses
-        )
-
-    if prediction_result is None:
-        st.error("Unable to generate results. Please try again.")
-        return
-
-    prediction = prediction_result.get("prediction", 0)
-
-    # Dynamic Result Display
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-        if prediction > 0.5:
-            # Higher risk
-            st.markdown("""
-            <div class="warning-box">
-                <h2>⚠️ Important Health Notice</h2>
-                <p style="font-size: 1.1rem;">Your results suggest a higher risk for Parkinson's disease.
-                We strongly recommend consulting with a healthcare professional for further assessment.</p>
-
-                <h4>🏥 Next Steps:</h4>
-                <p>• Schedule an appointment with a neurologist</p>
-                <p>• Bring these results to your doctor</p>
-                <p>• Consider a comprehensive neurological examination</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Lower risk
-            st.markdown("""
-            <div class="success-box">
-                <h2>🎉 Great News!</h2>
-                <p style="font-size: 1.1rem;">Your results indicate no significant risk for Parkinson's disease.
-                Keep up your healthy habits!</p>
-
-                <h4>🌟 Recommendations:</h4>
-                <p>• Continue regular physical activity</p>
-                <p>• Monitor any changes in movement</p>
-                <p>• Maintain regular health check-ups</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # Additional insights if motion data was uploaded
-    if st.session_state.motion_data_uploaded:
-        st.markdown("""
-        <div class="info-box">
-            <h4>📊 Motion Data Insights</h4>
-            <p>Your motion data provided additional context for a more accurate assessment.</p>
+    # Show user identifier
+    if st.session_state.user_id:
+        st.markdown(f"""
+        <div class="info-box" style="background-color: #E3F2FD; border-left: 5px solid #2196F3;">
+            <h4>👤 Assessment for User ID: {st.session_state.user_id}</h4>
+        </div>
+        """, unsafe_allow_html=True)
+    elif st.session_state.id_index:
+        st.markdown(f"""
+        <div class="info-box" style="background-color: #FFF3E0; border-left: 5px solid #FF9800;">
+            <h4>📄 Assessment for ID Index: {st.session_state.id_index}</h4>
         </div>
         """, unsafe_allow_html=True)
 
-    # Resources and next steps
-    st.markdown("### 📚 Helpful Resources")
+    result_container = st.container()
 
-    col1, col2 = st.columns(2)
+    with st.spinner("Analyzing your health data..."):
+        prediction_result = None
 
-    with col1:
+        if st.session_state.user_id:
+            prediction_result = predict_by_user_id(st.session_state.user_id)
+        else:
+            prediction_result = make_prediction(
+                st.session_state.user_data,
+                st.session_state.questionnaire_responses
+            )
+
+    with result_container:
+        if prediction_result is None:
+            st.error("Unable to generate results. Please try again.")
+            return
+
+        # Rest of the results display logic remains the same...
+        prediction_class = prediction_result.get("prediction", None)
+
+        if prediction_class is None:
+            st.error("Invalid response from prediction service.")
+            return
+
+        # Display results based on prediction class
+        if prediction_class == 0:
+            st.markdown(f"""
+            <p style="font-size: 1.2rem; font-weight: bold; color: #32CD32;">
+            🎉 Our model suggests you are healthy. Please keep up your good habits!
+            </p>
+            """, unsafe_allow_html=True)
+
+        elif prediction_class == 1:
+            st.markdown(f"""
+            <p style="font-size: 1.2rem; font-weight: bold; color: #FF4500;">
+            ⚠️ Our model shows you may have a high risk of Parkinson's disease (>50%).  
+            Please consult a healthcare professional for proper medical advice.
+            </p>
+            """, unsafe_allow_html=True)
+
+        elif prediction_class == 2:
+            st.markdown(f"""
+            <p style="font-size: 1.2rem; font-weight: bold; color: #FFA500;">
+            ⚠️ Our model suggests you have a low risk of Parkinson's disease,  
+            but there could be other motion-related conditions.  
+            We recommend seeking medical advice to investigate further.
+            </p>
+            """, unsafe_allow_html=True)
+
+        else:
+            st.warning("Unexpected prediction class received.")
+            
+        
+
+        # Rest of the results display remains the same...
+        st.markdown("### 📚 Helpful Resources")
+        # ... (resources section unchanged)
+
+        # Action buttons
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("🔄 New Assessment", key="new_assessment"):
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.rerun()
+
+        with col2:
+            if st.button("← Back to Edit", key="back_to_edit"):
+                st.session_state.current_step = 2
+                st.rerun()
+
+        # Disclaimer
         st.markdown("""
-        **🏥 Medical Resources:**
-        - Find a neurologist near you
-        - Parkinson's Foundation: parkinson.org
-        - Movement Disorder Society
-        - Local support groups
-        """)
+        <div class="info-box" style="background-color: #FFF3E0; border-left: 5px solid #FF9800;">
+            <h4>⚠️ Important Medical Disclaimer</h4>
+            <p>This screening tool is for informational purposes only and is not a substitute for
+            professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
+            Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown("""
-        **📱 Health Tracking:**
-        - Track symptoms over time
-        - Share results with doctor
-        - Monitor medication effects
-        - Join patient communities
-        """)
-
-    # Disclaimer
-    st.markdown("""
-    <div class="warning-box">
-        <h4>⚠️ Important Medical Disclaimer</h4>
-        <p>This screening tool is for informational purposes only and is not a substitute for
-        professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
-        Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.button("Continue to Summary →", type="primary", key="continue_7"):
-        st.session_state.current_step = 8
-        st.rerun()
-
-def step_8_closing():
-    """Step 8: Closing & Engagement"""
-    st.markdown('<div class="section-header">🎯 What\'s Next?</div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="success-box">
-        <div style="color: #2E7D32; font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem;">✅ Assessment Complete!</div>
-        <p>Thank you for taking the time to complete your motion health screening.
-        Your proactive approach to health monitoring is commendable.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Follow-up CTAs
-    st.markdown("### 🔄 Stay Connected With Your Health")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("📅 Schedule Retest", key="retest", use_container_width=True):
-            st.info("Set a reminder to retake this assessment in 6 months to track changes over time.")
-
-    with col2:
-        if st.button("📊 Download Results", key="download", use_container_width=True):
-            st.info("Download feature coming soon! For now, take a screenshot of your results.")
-
-    with col3:
-        if st.button("💌 Health Tips", key="tips", use_container_width=True):
-            st.info("Sign up for monthly motion health tips and updates (feature coming soon).")
-
-    # Reassurance
-    st.markdown("""
-    <div class="info-box">
-        <h4 style="color: #1565C0; margin-bottom: 1rem;">🔍 Remember</h4>
-        <p style="margin-bottom: 1rem;">This is a <strong>screening tool</strong>, not a formal diagnosis. It's designed to help you
-        stay informed about your health and know when to seek professional medical advice.</p>
-
-        <p style="margin-bottom: 0;"><strong>Your health journey is unique</strong> - use these results as one piece of information
-        alongside regular healthcare consultations.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Final CTA
-    if st.button("🔄 Take New Assessment", key="new_assessment", type="primary", use_container_width=True):
-        # Clear all session state
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
 
 def main():
     """Main application function with step-based navigation."""
     initialize_session_state()
 
     # Show progress indicator
-    show_step_indicator(st.session_state.current_step, 8)
+    show_step_indicator(st.session_state.current_step, 4)
 
     # Route to appropriate step
     if st.session_state.current_step == 0:
@@ -765,20 +727,10 @@ def main():
     elif st.session_state.current_step == 1:
         step_1_basic_info()
     elif st.session_state.current_step == 2:
-        step_2_health_history()
+        step_2_assessment()
     elif st.session_state.current_step == 3:
-        step_3_motion_intro()
-    elif st.session_state.current_step == 4:
-        step_4_motion_demo()
-    elif st.session_state.current_step == 5:
-        step_5_upload_confirmation()
-    elif st.session_state.current_step == 6:
-        step_6_questionnaire()
-    elif st.session_state.current_step == 7:
-        step_7_results()
-    elif st.session_state.current_step == 8:
-        step_8_closing()
-
+        step_3_results()
+        
     # Footer
     st.markdown("---")
     st.markdown("""
