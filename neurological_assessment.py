@@ -468,7 +468,7 @@ def step_2_assessment():
     if st.session_state.id_index:
         st.markdown(f"""
         <div class="info-box" style="background-color: #FFF3E0; border-left: 5px solid #FF9800;">
-            <h4>📄 Loaded Your Data based on your ID: {st.session_state.id_index}</h4>
+            <h4>📄 Loaded Your Apple Watch Data based on your ID: {st.session_state.id_index}</h4>
             <p>Questionnaire responses will be pre-filled.</p>
         </div>
         """, unsafe_allow_html=True)
