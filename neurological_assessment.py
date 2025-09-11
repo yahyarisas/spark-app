@@ -47,7 +47,7 @@ questionnaire_df = load_questionnaire_data()
 
 # Page configuration
 st.set_page_config(
-    page_title="Personal Motion Health Assessment",
+    page_title="Personal Motor Health Assessment",
     page_icon="🏃‍♀️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -167,10 +167,7 @@ MOTION_CONDITIONS = [
     "Arthritis",
     "Essential Tremor",
     "Multiple Sclerosis",
-    "Stroke",
-    "Muscle weakness",
-    "Joint problems",
-    "Other neurological conditions"
+    "Other conditions"
 ]
 
 # Sample user data (you can replace this with actual dataset later)
@@ -252,10 +249,10 @@ def step_0_welcome():
     """Step 0: Welcome Screen"""
     st.markdown("""
     <div class="welcome-box">
-        <h1>🏃‍♀️ Motion Health Assessment</h1>
-        <h2>Get insights into your motion health in minutes</h2>
+        <h1>🏃‍♀️ Motor Health Assessment</h1>
+        <h2>Get insights into your motor health in minutes</h2>
         <p style="font-size: 1.1rem; margin-top: 1rem;">
-            Our advanced screening tool helps you understand potential motion-related
+            Our advanced screening tool helps you understand potential motor-related
             health concerns through a simple, science-based assessment.
         </p>
     </div>
@@ -274,7 +271,7 @@ def step_0_welcome():
         """)
 
         if st.button("Start Your Assessment", type="primary", key="start_btn",
-                    help="Click to begin your motion health screening"):
+                    help="Click to begin your motor health screening"):
             st.session_state.current_step = 1
             st.rerun()
 
@@ -309,10 +306,10 @@ def step_1_basic_info():
 
     # Health History Section
     st.markdown("---")
-    st.markdown("### 🏥 Motion-Related Health History")
+    st.markdown("### 🏥 Motor-Related Health History")
 
     has_conditions = st.radio(
-        "Have you been diagnosed with any motion-related conditions?",
+        "Have you been diagnosed with any motor-related conditions?",
         ["No", "Yes"],
         key="has_conditions"
     )
@@ -324,7 +321,7 @@ def step_1_basic_info():
         age_at_diagnosis = st.number_input(
             "Age at diagnosis",
             min_value=1, max_value=120, value=50,
-            help="Age when you were first diagnosed with a motion-related condition"
+            help="Age when you were first diagnosed with a motor-related condition"
         )
 
         st.markdown("**Please select all conditions that apply:**")
@@ -401,7 +398,7 @@ def fetch_user_data(user_id):
         return None
 
 def step_2_assessment():
-    """Step 2: Motion Data Collection & Health Questionnaire"""
+    """Step 2: Motor Data Collection & Health Questionnaire"""
     st.markdown('<div class="section-header">📊 Health Assessment & Questionnaire</div>', unsafe_allow_html=True)
     
 
@@ -424,7 +421,7 @@ def step_2_assessment():
         )
         
     with col2:
-        if st.button("Load CSV Data", key="load_csv_data"):
+        if st.button("Load Data", key="load_csv_data"):
             if id_index > 0:
                 # Load data from CSV
                 answers = get_user_answers_by_id(id_index)
@@ -612,8 +609,8 @@ def step_3_results():
      # Insert an anchor at the top
     st.markdown('<a id="top"></a>', unsafe_allow_html=True)
     
-    """Step 3: Results & Insights - FIXED: Updated prediction logic"""
-    st.markdown('<div class="section-header">📊 Your Motion Health Results</div>', unsafe_allow_html=True)
+    #"""Step 3: Results & Insights - FIXED: Updated prediction logic"""
+    st.markdown('<div class="section-header">📊 Your Motor Health Results</div>', unsafe_allow_html=True)
 
     # Show user identifier
     if st.session_state.user_id:
@@ -674,7 +671,7 @@ def step_3_results():
             st.markdown(f"""
             <p style="font-size: 1.2rem; font-weight: bold; color: #FFA500;">
             ⚠️ Our model suggests you have a low risk of Parkinson's disease,  
-            but there could be other motion-related conditions.  
+            but there could be other motor-related conditions.  
             We recommend seeking medical advice to investigate further.
             </p>
             """, unsafe_allow_html=True)
@@ -735,7 +732,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 0.9em; padding: 2rem 0;">
-        <p>🏥 Motion Health Assessment Tool | For educational and screening purposes only</p>
+        <p>🏥 Motor Health Assessment Tool | For educational and screening purposes only</p>
         <p>Always consult healthcare professionals for medical advice | © 2025</p>
     </div>
     """, unsafe_allow_html=True)
