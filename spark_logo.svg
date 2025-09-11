@@ -1,0 +1,71 @@
+<svg viewBox="0 0 350 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Starburst icon on the left -->
+  <g transform="translate(50, 60)">
+    <!-- Central core -->
+    <circle cx="0" cy="0" r="6" fill="url(#coreGradient)"/>
+
+    <!-- Primary rays (8 directions at 45-degree intervals) -->
+    <!-- 0° (North) -->
+    <rect x="-2" y="-30" width="4" height="20" fill="url(#orangeGradient)" rx="2"/>
+    <!-- 45° (Northeast) -->
+    <rect x="7.07" y="-23.07" width="4" height="20" fill="url(#greenGradient)" rx="2" transform="rotate(45 9.07 -13.07)"/>
+    <!-- 90° (East) -->
+    <rect x="10" y="-2" width="20" height="4" fill="url(#orangeGradient)" rx="2"/>
+    <!-- 135° (Southeast) -->
+    <rect x="7.07" y="3.07" width="4" height="20" fill="url(#greenGradient)" rx="2" transform="rotate(135 9.07 13.07)"/>
+    <!-- 180° (South) -->
+    <rect x="-2" y="10" width="4" height="20" fill="url(#orangeGradient)" rx="2"/>
+    <!-- 225° (Southwest) -->
+    <rect x="-11.07" y="3.07" width="4" height="20" fill="url(#greenGradient)" rx="2" transform="rotate(225 -9.07 13.07)"/>
+    <!-- 270° (West) -->
+    <rect x="-30" y="-2" width="20" height="4" fill="url(#orangeGradient)" rx="2"/>
+    <!-- 315° (Northwest) -->
+    <rect x="-11.07" y="-23.07" width="4" height="20" fill="url(#greenGradient)" rx="2" transform="rotate(315 -9.07 -13.07)"/>
+
+    <!-- Secondary shorter rays (4 directions at 90-degree intervals) -->
+    <!-- 0° (North) -->
+    <rect x="-1.5" y="-40" width="3" height="8" fill="url(#lightGreenGradient)" rx="1.5"/>
+    <!-- 90° (East) -->
+    <rect x="32" y="-1.5" width="8" height="3" fill="url(#lightGreenGradient)" rx="1.5"/>
+    <!-- 180° (South) -->
+    <rect x="-1.5" y="32" width="3" height="8" fill="url(#lightGreenGradient)" rx="1.5"/>
+    <!-- 270° (West) -->
+    <rect x="-40" y="-1.5" width="8" height="3" fill="url(#lightGreenGradient)" rx="1.5"/>
+  </g>
+
+  <!-- SPARK text -->
+  <text x="110" y="55" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#5F5651" letter-spacing="2px">SPARK</text>
+
+  <!-- Decorative lines - underlining SPARK and separating from tagline -->
+  <line x1="95" y1="60" x2="315" y2="60" stroke="#5F5651" stroke-width="2"/>
+
+  <!-- SMART PARKINSON'S ASSESSMENT text -->
+  <text x="210" y="73" font-family="Arial, sans-serif" font-size="9" font-weight="normal" fill="#5F5651" letter-spacing="3px" text-anchor="middle">SMART PARKINSON'S ASSESSMENT</text>
+
+  <!-- Gradients and definitions -->
+  <defs>
+    <!-- Core gradient -->
+    <radialGradient id="coreGradient">
+      <stop offset="0%" style="stop-color:#ff8c00"/>
+      <stop offset="100%" style="stop-color:#ffa500"/>
+    </radialGradient>
+
+    <!-- Orange gradient for rays -->
+    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff8c00"/>
+      <stop offset="100%" style="stop-color:#ffa500"/>
+    </linearGradient>
+
+    <!-- Green gradient for alternating rays -->
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#228b22"/>
+      <stop offset="100%" style="stop-color:#32cd32"/>
+    </linearGradient>
+
+    <!-- Light green for secondary rays -->
+    <linearGradient id="lightGreenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#32cd32"/>
+      <stop offset="100%" style="stop-color:#90ee90"/>
+    </linearGradient>
+  </defs>
+</svg>
