@@ -136,6 +136,30 @@ st.markdown("""
         margin: 1.5rem 0;
         border: 2px solid #e3f2fd;
     }
+    
+    .metric-card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        font-size: 1.1rem;
+        font-weight: 500;
+        background: #f8f9ff;
+        border: 2px solid #e3f2fd;
+        overflow: visible;
+        word-break: break-word;
+    }
+    .healthy-card { background: #e8f5e9; border-left: 6px solid #43a047; }
+    .parkinson-card { background: #ffebee; border-left: 6px solid #e53935; }
+    .motor-card { background: #fffde7; border-left: 6px solid #fbc02d; }
+
+    .result-title {
+        font-size: 1.8rem;
+        color: #A23B72;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        margin-top: 0;
+    }
+    
 
     .big-button {
         font-size: 1.2rem !important;
@@ -144,8 +168,21 @@ st.markdown("""
         font-weight: 600 !important;
         margin: 0.5rem !important;
     }
+    
+    .disclaimer-box {
+        background-color: #f5f5f5 !important;
+        border-left: 3px solid #bdbdbd !important;
+        color: #555 !important;
+        font-size: 0.95rem !important;
+        padding: 0.7rem 1rem !important;
+        margin: 1.5rem 0 0.5rem 0 !important;
+        border-radius: 7px !important;
+    }
+      
+    
 </style>
 """, unsafe_allow_html=True)
+
 
 # Constants
 FASTAPI_URL = "https://spark-283984718972.europe-west1.run.app/predict_by_qn"
@@ -605,6 +642,36 @@ def predict_by_user_id(user_id):
         return None
     
 
+def display_classification_result(prediction, confidence=None, probabilities=None):
+    """Display the main classification result with styling"""
+    # Use a single column for the result banner
+    col = st.container()
+    with col:
+        if prediction == 'Healthy':
+            st.markdown(f"""
+            <div class="metric-card healthy-card">
+                <div class="result-title">🟢 Classification Result: {prediction}</div>
+                <p>Our result shows you are healthy! Please keep it up!</p>
+            </div>
+            """, unsafe_allow_html=True)
+        elif prediction == "Parkinson's Disease":
+            st.markdown(f"""
+            <div class="metric-card parkinson-card">
+                <div class="result-title">🔴 Classification Result: {prediction}</div>
+                <p>Our result shows you have a higher risk for Parkinson’s disease symptoms. Please seek professional assistance!</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:  # Other Motor Disease
+            st.markdown(f"""
+            <div class="metric-card motor-card">
+                <div class="result-title">🟡 Classification Result: {prediction}</div>
+                <p>Our result shows you have a lower risk for Parkinsons's disease but higher risk for other motor disease symptoms. Please seek professional assistance!</p>
+            </div>
+            """, unsafe_allow_html=True)
+   
+
+    
+
 def step_3_results():
      # Insert an anchor at the top
     st.markdown('<a id="top"></a>', unsafe_allow_html=True)
@@ -639,45 +706,28 @@ def step_3_results():
                 st.session_state.questionnaire_responses
             )
 
-    with result_container:
-        if prediction_result is None:
-            st.error("Unable to generate results. Please try again.")
-            return
+        with result_container:
+            if prediction_result is None:
+                st.error("Unable to generate results. Please try again.")
+                return
 
-        # Rest of the results display logic remains the same...
-        prediction_class = prediction_result.get("prediction", None)
+            prediction_class = prediction_result.get("prediction", None)
+            confidence = prediction_result.get("confidence", None)
+            probabilities = prediction_result.get("probabilities", None)
 
-        if prediction_class is None:
-            st.error("Invalid response from prediction service.")
-            return
+            if prediction_class is None:
+                st.error("Invalid response from prediction service.")
+                return
 
-        # Display results based on prediction class
-        if prediction_class == 0:
-            st.markdown(f"""
-            <p style="font-size: 1.2rem; font-weight: bold; color: #32CD32;">
-            🎉 Our model suggests you are healthy. Please keep up your good habits!
-            </p>
-            """, unsafe_allow_html=True)
+            # Map prediction_class to label
+            if prediction_class == 0:
+                label = "Healthy"
+            elif prediction_class == 1:
+                label = "Parkinson's Disease"
+            else:
+                label = "Other Motor Disease"
 
-        elif prediction_class == 1:
-            st.markdown(f"""
-            <p style="font-size: 1.2rem; font-weight: bold; color: #FF4500;">
-            ⚠️ Our model shows you may have a high risk of Parkinson's disease (>50%).  
-            Please consult a healthcare professional for proper medical advice.
-            </p>
-            """, unsafe_allow_html=True)
-
-        elif prediction_class == 2:
-            st.markdown(f"""
-            <p style="font-size: 1.2rem; font-weight: bold; color: #FFA500;">
-            ⚠️ Our model suggests you have a low risk of Parkinson's disease,  
-            but there could be other motor-related conditions.  
-            We recommend seeking medical advice to investigate further.
-            </p>
-            """, unsafe_allow_html=True)
-
-        else:
-            st.warning("Unexpected prediction class received.")
+            display_classification_result(label, confidence, probabilities)
             
         
 
@@ -701,12 +751,13 @@ def step_3_results():
                 st.rerun()
 
         # Disclaimer
+        # Footer
         st.markdown("""
-        <div class="info-box" style="background-color: #FFF3E0; border-left: 5px solid #FF9800;">
-            <h4>⚠️ Important Medical Disclaimer</h4>
-            <p>This screening tool is for informational purposes only and is not a substitute for
+        <div class="disclaimer-box">
+            <strong>⚠️ Medical Disclaimer:</strong>
+            This screening tool is for informational purposes only and is not a substitute for
             professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
-            Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.</p>
+            Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.
         </div>
         """, unsafe_allow_html=True)
 
@@ -728,14 +779,7 @@ def main():
     elif st.session_state.current_step == 3:
         step_3_results()
         
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #666; font-size: 0.9em; padding: 2rem 0;">
-        <p>🏥 Motor Health Assessment Tool | For educational and screening purposes only</p>
-        <p>Always consult healthcare professionals for medical advice | © 2025</p>
-    </div>
-    """, unsafe_allow_html=True)
+    
 
 if __name__ == "__main__":
     main()
