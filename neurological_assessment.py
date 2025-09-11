@@ -33,8 +33,13 @@ from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 import time
+import base64
 
-
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+</style>
+""", unsafe_allow_html=True)
 
 csv_path = "./data/questionnaire_test.csv"
 
@@ -47,18 +52,19 @@ questionnaire_df = load_questionnaire_data()
 
 # Page configuration
 st.set_page_config(
-    page_title="Personal Motor Health Assessment",
-    page_icon="🏃‍♀️",
+    page_title="SPARK",
+    page_icon="spark_icon (1).png",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # Custom CSS for better styling
 st.markdown("""
+
 <style>
     .main-header {
         font-size: 3rem;
-        color: #2E86AB;
+        color: #727272; /* Grey from logo */
         text-align: center;
         margin-bottom: 1rem;
         font-weight: 700;
@@ -66,7 +72,7 @@ st.markdown("""
 
     .sub-header {
         font-size: 1.3rem;
-        color: #666;
+        color: #616161; /* Darker grey for contrast */
         text-align: center;
         margin-bottom: 2rem;
         font-weight: 400;
@@ -74,15 +80,15 @@ st.markdown("""
 
     .section-header {
         font-size: 1.8rem;
-        color: #A23B72;
+        color: #727272; /* Grey from logo */
         margin: 2rem 0 1rem 0;
-        border-bottom: 3px solid #F18F01;
+        border-bottom: 3px solid #F18F01; /* Orange from logo */
         padding-bottom: 0.5rem;
         font-weight: 600;
     }
 
     .welcome-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #A2B591 0%, #727272 100%); /* New gradient with logo colors */
         color: white;
         padding: 2rem;
         border-radius: 15px;
@@ -93,7 +99,7 @@ st.markdown("""
     .info-box {
         padding: 1.5rem !important;
         border-radius: 12px !important;
-        border-left: 5px solid #2196F3 !important;
+        border-left: 5px solid #008000; /* Green from logo */
         margin: 1.5rem 0 !important;
     }
 
@@ -117,11 +123,11 @@ st.markdown("""
     }
 
     .step-active {
-        background-color: #2196F3;
+        background-color: #F18F01; /* Orange from logo */
     }
 
     .step-completed {
-        background-color: #4CAF50;
+        background-color: #008000; /* Green from logo */
     }
 
     .step-pending {
@@ -130,36 +136,47 @@ st.markdown("""
     }
 
     .questionnaire-section {
-        background-color: #f8f9ff;
+        background-color: #f8f8f8;
         padding: 2rem;
         border-radius: 15px;
         margin: 1.5rem 0;
-        border: 2px solid #e3f2fd;
+        border: 2px solid #e3e3e3;
     }
-    
+
     .metric-card {
         padding: 1.5rem;
         border-radius: 12px;
         margin: 1.5rem 0;
         font-size: 1.1rem;
         font-weight: 500;
-        background: #f8f9ff;
-        border: 2px solid #e3f2fd;
+        background: #f8f8f8;
+        border: 2px solid #e3e3e3;
         overflow: visible;
         word-break: break-word;
     }
-    .healthy-card { background: #e8f5e9; border-left: 6px solid #43a047; }
-    .parkinson-card { background: #ffebee; border-left: 6px solid #e53935; }
-    .motor-card { background: #fffde7; border-left: 6px solid #fbc02d; }
+
+    .healthy-card {
+        background: #e6f7e6;
+        border-left: 6px solid #008000; /* Green from logo */
+    }
+
+    .parkinson-card {
+        background: #ffebe6;
+        border-left: 6px solid #FF5733; /* A bright, contrasting orange */
+    }
+
+    .motor-card {
+        background: #fff8e1;
+        border-left: 6px solid #F18F01; /* Orange from logo */
+    }
 
     .result-title {
         font-size: 1.8rem;
-        color: #A23B72;
+        color: #727272; /* Grey from logo */
         font-weight: 600;
         margin-bottom: 0.5rem;
         margin-top: 0;
     }
-    
 
     .big-button {
         font-size: 1.2rem !important;
@@ -168,18 +185,16 @@ st.markdown("""
         font-weight: 600 !important;
         margin: 0.5rem !important;
     }
-    
+
     .disclaimer-box {
-        background-color: #f5f5f5 !important;
-        border-left: 3px solid #bdbdbd !important;
+        background-color: #f0f0f0 !important;
+        border-left: 3px solid #cccccc !important;
         color: #555 !important;
         font-size: 0.95rem !important;
         padding: 0.7rem 1rem !important;
         margin: 1.5rem 0 0.5rem 0 !important;
         border-radius: 7px !important;
     }
-      
-    
 </style>
 """, unsafe_allow_html=True)
 
@@ -255,6 +270,7 @@ def initialize_session_state():
 
 def show_step_indicator(current_step, total_steps):
     """Show progress indicator."""
+    st.image("spark_logo.svg", width=400)
     st.markdown('<div class="step-indicator">', unsafe_allow_html=True)
 
     steps = ["Welcome", "Basic info", "Assessment", "Results"]
@@ -286,7 +302,7 @@ def step_0_welcome():
     """Step 0: Welcome Screen"""
     st.markdown("""
     <div class="welcome-box">
-        <h1>🏃‍♀️ Motor Health Assessment</h1>
+        <h1>SPARK Assessment</h1>
         <h2>Get insights into your motor health in minutes</h2>
         <p style="font-size: 1.1rem; margin-top: 1rem;">
             Our advanced screening tool helps you understand potential motor-related
@@ -398,7 +414,7 @@ def step_1_basic_info():
                 st.rerun()
             else:
                 st.error("Please provide consent to continue")
-                
+
 
 def get_user_answers_by_id(id_index):
     """Return user questionnaire answers for a given id_index from CSV."""
@@ -437,28 +453,37 @@ def fetch_user_data(user_id):
 def step_2_assessment():
     """Step 2: Motor Data Collection & Health Questionnaire"""
     st.markdown('<div class="section-header">📊 Health Assessment & Questionnaire</div>', unsafe_allow_html=True)
-    
+
 
     # User ID Section (Optional)
-    st.markdown("""
+    with open("watch.png", "rb") as w:
+        watch_content = w.read()
+
+    watch_b64 = base64.b64encode(watch_content).decode()
+    st.markdown(f"""
     <div class="info-box" style="background-color: #E8F5E8; border-left: 5px solid #4CAF50;">
-        <h4>👤 Optional: Input User ID</h4>
-        <p>If you have an existing user ID, enter it below to pre-populate your previous responses.</p>
+        <h4 style="display:flex; align-items:center; gap:10px;">
+            <img src="data:image/png;base64,{watch_b64}" width="60" height="60" alt="User Icon">
+            Enter User ID (Optional)
+        </h4>
+        <p>If you have an existing user ID, Enter your ID to link your Apple Watch data and your data will be prefilled.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    
-    col1, col2 = st.columns([2, 1])
+
+    col1, col2 = st.columns([1, 1])
     with col1:
         id_index = st.number_input(
-            "Enter ID Index (optional)",
+            "Enter User ID (optional)",
             min_value=0,
             value=st.session_state.id_index if st.session_state.id_index else 0,
             help="Load questionnaire data by ID"
         )
-        
+
     with col2:
-        if st.button("Load Data", key="load_csv_data"):
+        st.markdown(" ")
+        st.markdown("")
+        if st.button("Load Data", key="load_csv_data", type="primary"):
             if id_index > 0:
                 # Load data from CSV
                 answers = get_user_answers_by_id(id_index)
@@ -466,18 +491,14 @@ def step_2_assessment():
                     st.session_state.id_index = id_index
                     st.session_state.user_id = str(id_index)  # <-- ADD THIS LINE
                     st.session_state.existing_user_data = None  # Clear user data
-                    st.success(f"✅ data loaded for ID Index: {id_index}")
+                    st.success(f"✅ data loaded for User ID: {id_index}")
                     st.rerun()
                 else:
-                    st.error(f"❌ No data found for ID Index: {id_index}")
+                    st.error(f"❌ No data found for User ID: {id_index}")
             else:
                 st.session_state.id_index = None
                 st.session_state.user_id = ""  # <-- ADD THIS LINE (clear user_id)
-                st.info("Starting fresh assessment")    
-            
-    
-    
-
+                st.info("Starting fresh assessment")
 
     # Display loaded user info if available
     if st.session_state.existing_user_data:
@@ -531,9 +552,9 @@ def step_2_assessment():
             for key in QUESTIONNAIRE.keys():
                 if key in csv_answers:
                     existing_responses[key] = bool(csv_answers[key])
-    
-    
-   
+
+
+
 
     # Create questionnaire in a more compact format
     question_keys = list(QUESTIONNAIRE.keys())
@@ -626,7 +647,7 @@ def make_prediction(user_data, questionnaire_responses):
     except requests.exceptions.RequestException as e:
         st.error(f"Connection Error: {str(e)}")
         return None
-    
+
 def predict_by_user_id(user_id):
     """Call FastAPI endpoint to predict using user_id - uses FASTAPI_URL_USER."""
     try:
@@ -640,7 +661,7 @@ def predict_by_user_id(user_id):
     except requests.exceptions.RequestException as e:
         st.error(f"Connection Error: {str(e)}")
         return None
-    
+
 
 def display_classification_result(prediction, confidence=None, probabilities=None):
     """Display the main classification result with styling"""
@@ -650,34 +671,34 @@ def display_classification_result(prediction, confidence=None, probabilities=Non
         if prediction == 'Healthy':
             st.markdown(f"""
             <div class="metric-card healthy-card">
-                <div class="result-title">🟢 Classification Result: {prediction}</div>
+                <div class="result-title">🟢 {prediction}</div>
                 <p>Our result shows you are healthy! Please keep it up!</p>
             </div>
             """, unsafe_allow_html=True)
         elif prediction == "Parkinson's Disease":
             st.markdown(f"""
             <div class="metric-card parkinson-card">
-                <div class="result-title">🔴 Classification Result: {prediction}</div>
+                <div class="result-title">🔴 {prediction}</div>
                 <p>Our result shows you have a higher risk for Parkinson’s disease symptoms. Please seek professional assistance!</p>
             </div>
             """, unsafe_allow_html=True)
         else:  # Other Motor Disease
             st.markdown(f"""
             <div class="metric-card motor-card">
-                <div class="result-title">🟡 Classification Result: {prediction}</div>
+                <div class="result-title">🟡 {prediction}</div>
                 <p>Our result shows you have a lower risk for Parkinsons's disease but higher risk for other motor disease symptoms. Please seek professional assistance!</p>
             </div>
             """, unsafe_allow_html=True)
-   
 
-    
+
+
 
 def step_3_results():
      # Insert an anchor at the top
     st.markdown('<a id="top"></a>', unsafe_allow_html=True)
-    
+
     #"""Step 3: Results & Insights - FIXED: Updated prediction logic"""
-    st.markdown('<div class="section-header">📊 Your Motor Health Results</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📊 Your SPARK Assessment</div>', unsafe_allow_html=True)
 
     # Show user identifier
     if st.session_state.user_id:
@@ -728,12 +749,31 @@ def step_3_results():
                 label = "Other Motor Disease"
 
             display_classification_result(label, confidence, probabilities)
-            
-        
+
+
 
         # Rest of the results display remains the same...
-        st.markdown("### 📚 Helpful Resources")
-        # ... (resources section unchanged)
+        with st.expander("### 📚 Helpful Resources"):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                **🏥 Medical Resources:**
+                - Find a neurologist: [American Academy of Neurology](https://www.aan.com)
+                - Parkinson's Foundation: [parkinson.org](https://www.parkinson.org)
+                - Movement Disorder Society: [movementdisorders.org](https://www.movementdisorders.org)
+                - Local support groups
+                """)
+
+            with col2:
+                st.markdown("""
+                **📱 Health Tracking:**
+                - Track symptoms over time
+                - Share results with doctor
+                - Monitor medication effects
+                - Join patient communities
+                """)
 
         # Action buttons
         st.markdown("---")
@@ -751,13 +791,36 @@ def step_3_results():
                 st.rerun()
 
         # Disclaimer
+        # # Footer
+        # st.markdown("""
+        # <div class="disclaimer-box">
+        #     <strong>⚠️ Medical Disclaimer:</strong>
+        #     This screening tool is for informational purposes only and is not a substitute for
+        #     professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
+        #     Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.
+        # </div>
+        # """, unsafe_allow_html=True)
+
+        with open("spark_logo.svg", "r") as f:  # Replace with your actual logo filename
+            logo_content = f.read()
+
+        logo_b64 = base64.b64encode(logo_content.encode()).decode()
+
         # Footer
-        st.markdown("""
+        st.markdown(f"""
         <div class="disclaimer-box">
-            <strong>⚠️ Medical Disclaimer:</strong>
-            This screening tool is for informational purposes only and is not a substitute for
-            professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
-            Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.
+            <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 1rem;">
+                <div>
+                    <strong>⚠️ Medical Disclaimer:</strong>
+                    This screening tool is for informational purposes only and is not a substitute for
+                    professional medical diagnosis. Results should not be used as the sole basis for medical decisions.
+                    Please consult with a qualified healthcare provider for proper medical evaluation and diagnosis.
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd; color: #666; font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 5px;">
+                <img src="data:image/svg+xml;base64,{logo_b64}" width="80" height="60" alt="SPARK Logo">
+                <span>© 2025</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -778,8 +841,8 @@ def main():
         step_2_assessment()
     elif st.session_state.current_step == 3:
         step_3_results()
-        
-    
+
+
 
 if __name__ == "__main__":
     main()
